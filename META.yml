@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #
 name:         Games-Killingfloor-Mapcache
-version:      0.1
+version:      0.2
 version_from: Mapcache.pm
 installdirs:  site
 requires:

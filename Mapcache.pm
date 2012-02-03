@@ -1,64 +1,75 @@
 package Games::Killingfloor::Mapcache;
-use strict;
-use warnings;
+#use strict;
+#use warnings;
 use Exporter;
 our @ISA = qw/Exporter/;
 our @EXPORT = qw/nextmap/;
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
-use Win32::Registry;
+use Win32::OLE qw( in );
+#use Win32::Registry;#old
+use Win32::TieRegistry (
+	Delimiter   => "/",
+	ArrayValues => 1,
+	TiedRef     => \$reg
+);
 
 sub nextmap {
 	my $registry;
-	my ($search1,$search2,$search3,$search4);
 	unless($ARGV[0]){
-		$::HKEY_CLASSES_ROOT->Open("Applications\\steam.exe\\shell\\open\\command", $search1);
-		$::HKEY_CLASSES_ROOT->Open("steam\\Shell\\Open\\Command", $search2);
-		$::HKEY_LOCAL_MACHINE->Open("SOFTWARE\\Classes\\Applications\\steam.exe\\shell\\open\\command", $search3);
-		$::HKEY_LOCAL_MACHINE->Open("SOFTWARE\\Classes\\steam\\Shell\\Open\\Command", $search4);
+		my $WMI = Win32::OLE->GetObject("winmgmts:{impersonationLevel=impersonate}\\\\.\\Root\\cimv2");
+		foreach $Proc ( sort {lc $a->{ProcessId} cmp lc $b->{ProcessId}} in( $WMI->InstancesOf( "Win32_Process" ) ) ){
+			if($Proc->{ExecutablePath} =~ /steam.exe$/i){
+				$registry = $Proc->{ExecutablePath};
+				$registry =~ s/\\/\//g;
+				$registry =~ s/\/Steam.exe$//i;
+				last;
+			}
+		}
 
-		$search1->GetValues(\my %values1);
-		$search2->GetValues(\my %values2);
-		$search3->GetValues(\my %values3);
-		$search4->GetValues(\my %values4);
-		foreach (sort(keys(%values1))) {
-			my($name, $type, $data) = @{$values1{$_}};
-			$data =~ s/\"//g;
-			if($data =~ /steam.exe/){
-				$data = (split(/steam.exe/,$data,2))[0];
-				$registry = $data .'steamapps\common\killingfloor';
-				goto FOUND;
+		use Win32::TieRegistry (
+			Delimiter   => "/",
+			ArrayValues => 1,
+			TiedRef     => \$reg
+		);
+
+		#"Classes" for HKEY_CLASSES_ROOT
+		#"CUser" for HKEY_CURRENT_USER
+		#"LMachine" for HKEY_LOCAL_MACHINE
+		#"Users" for HKEY_USERS
+		#"PerfData" for HKEY_PERFORMANCE_DATA
+		#"CConfig" for HKEY_CURRENT_CONFIG
+		#"DynData" for HKEY_DYN_DATA
+
+		unless($registry){
+			foreach (
+				"Classes/Applications/steam.exe/shell/open/command",
+				"LMachine/SOFTWARE/Classes/steam/Shell/Open/Command",
+				"LMachine/SOFTWARE/Classes/Applications/steam.exe/shell/open/command",
+				"Classes/steam/Shell/Open/Command"
+				){
+				if(my $more = $reg->{$_}){
+					if($more->{'/'}[0]){
+						if($more->{'/'}[0] =~ /^"([^"]*)"/){
+							$registry = $1;
+							$registry =~ s/\\/\//g;
+							$registry =~ s/\/Steam.exe$//i;
+						}else{
+							$registry = $more->{'/'}[0];
+							$registry =~ s/\\/\//g;
+							$registry =~ s/\/Steam.exe$//i;
+						}
+						last;
+					}
+				}
 			}
 		}
-		foreach (sort(keys(%values2))) {
-			my($name, $type, $data) = @{$values2{$_}};
-			$data =~ s/\"//g;
-			if($data =~ /steam.exe/){
-				$data = (split(/steam.exe/,$data,2))[0];
-				$registry = $data .'steamapps\common\killingfloor';
-				goto FOUND;
-			}
-		}
-		foreach (sort(keys(%values3))) {
-			my($name, $type, $data) = @{$values3{$_}};
-			$data =~ s/\"//g;
-			if($data =~ /steam.exe/){
-				$data = (split(/steam.exe/,$data,2))[0];
-				$registry = $data .'steamapps\common\killingfloor';
-				goto FOUND;
-			}
-		}
-		foreach (sort(keys(%values4))) {
-			my($name, $type, $data) = @{$values4{$_}};
-			$data =~ s/\"//g;
-			if($data =~ /steam.exe/){
-				$data = (split(/steam.exe/,$data,2))[0];
-				$registry = $data .'steamapps\common\killingfloor';
-				goto FOUND;
-			}
+		if($registry !~ /\/$/){
+			$registry .= '/steamapps/common/killingfloor';
+		}else{
+			$registry .= 'steamapps/common/killingfloor';
 		}
 	}
-	FOUND:
 
 	my $steampfad = $ARGV[0] || $registry || ".";
 
@@ -72,7 +83,7 @@ sub nextmap {
 	my $notcache;
 	my $found = 0;
 	my $foundwrite = 0;
-	open(F,"<$steampfad\\Cache\\cache.ini");
+	open(F,"<$steampfad/Cache/cache.ini");
 	while(<F>){
 		s/[\n\r]//g;
 		my($key,$datei) = split(/=/,$_,2);
@@ -109,11 +120,11 @@ sub nextmap {
 			close(W);
 			$foundwrite++;
 		}
-		unlink("$steampfad\\Cache\\$key.uxx");
+		unlink("$steampfad/Cache/$key.uxx");
 	}
 	close(F);
 
-	open(F,">$steampfad\\Cache\\cache.ini");
+	open(F,">$steampfad/Cache/cache.ini");
 	print F '[Cache]'."\n";
 	close(F);
 
@@ -144,7 +155,7 @@ Games::Killingfloor::Mapcache convert Maps as Cache in regular Maps
 
 =head1 COPYRIGHT
 
-Games::Killingfloor::Mapcache is Copyright (c) 2010 Stefan Gipper
+Games::Killingfloor::Mapcache is Copyright (c) 2011 Stefan Gipper
 All rights reserved.
 
 This program is free software; you can redistribute

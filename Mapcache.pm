@@ -4,7 +4,7 @@ package Games::Killingfloor::Mapcache;
 use Exporter;
 our @ISA = qw/Exporter/;
 our @EXPORT = qw/nextmap/;
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 use Win32::OLE qw( in );
 #use Win32::Registry;#old
@@ -106,7 +106,7 @@ sub nextmap {
 			$notcache = "StaticMeshes";
 		}
 
-		if(!-e("$steampfad\\$notcache\\$datei")){
+		if(!-e("$steampfad\\$notcache\\$datei") && -s("$steampfad\\Cache\\$key.uxx")){
 			print "\tDatei $key einlesen: $datei\n";
 			open(R,"<$steampfad\\Cache\\$key.uxx");
 			binmode(R);

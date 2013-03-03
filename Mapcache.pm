@@ -151,12 +151,9 @@ Games::Killingfloor::Mapcache convert Maps as Cache in regular Maps
 
 =head1 AUTHOR
 
-    Stefan Gipper <stefanos@cpan.org>, http://www.coder-world.de/
+    -
 
 =head1 COPYRIGHT
-
-Games::Killingfloor::Mapcache is Copyright (c) 2011 Stefan Gipper
-All rights reserved.
 
 This program is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.

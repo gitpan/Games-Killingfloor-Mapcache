@@ -7,6 +7,6 @@ WriteMakefile(
     'PREREQ_PM'		=> {Win32::TieRegistry => 0.10,Win32::OLE => 0.10}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ? (
       ABSTRACT_FROM => 'Mapcache.pm', 
-      AUTHOR     => 'Stefan Gipper <stefanos@cpan.org>',
+      AUTHOR     => '-',
     ) : ()),
 );
